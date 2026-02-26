@@ -1,11 +1,6 @@
 // API クライアント - Flask REST APIを使用
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-interface ApiResponse<T> {
-  data?: T;
-  error?: string;
-}
-
 async function request<T>(
   endpoint: string,
   options: RequestInit = {}
