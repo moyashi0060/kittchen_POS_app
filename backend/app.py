@@ -13,7 +13,13 @@ env_path = Path(__file__).parent / '.env'
 load_dotenv(env_path)
 
 app = Flask(__name__)
-CORS(app)
+
+# CORS設定: 本番環境ではフロントエンドのドメインのみ許可
+ALLOWED_ORIGINS = os.environ.get('ALLOWED_ORIGINS', '*')
+if ALLOWED_ORIGINS == '*':
+    CORS(app)
+else:
+    CORS(app, origins=ALLOWED_ORIGINS.split(','))
 
 # Supabase設定
 SUPABASE_URL = os.environ.get('SUPABASE_URL')

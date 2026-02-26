@@ -526,31 +526,73 @@ npm run dev
 |---------|---------------|------|
 | GET | `/api/health` | サーバー状態を確認 |
 
-## 本番デプロイ
+## 本番デプロイ（Render + Vercel）
 
-### フロントエンド
+### Step 1: バックエンドを Render にデプロイ
 
-```bash
-cd frontend
-npm run build
-```
+1. [Render](https://render.com/) にログイン（GitHubアカウント連携推奨）
+2. **New → Web Service** を選択
+3. GitHubリポジトリを接続し、以下を設定:
 
-`dist/` フォルダを任意の静的ホスティングサービスにデプロイ:
-- Vercel
-- Netlify
-- Cloudflare Pages
+| 設定項目 | 値 |
+|----------|-----|
+| Name | `kitchen-app-backend` |
+| Root Directory | `backend` |
+| Runtime | `Python` |
+| Build Command | `pip install -r requirements.txt` |
+| Start Command | `gunicorn -w 4 -b 0.0.0.0:$PORT app:app` |
+| Instance Type | `Free` |
 
-### バックエンド
+4. **Environment Variables** に以下を追加:
 
-Gunicornを使用:
-```bash
-gunicorn -w 4 -b 0.0.0.0:5000 app:app
-```
+| 変数名 | 値 |
+|--------|-----|
+| `SUPABASE_URL` | Supabaseプロジェクトの URL |
+| `SUPABASE_KEY` | Supabaseの anon key |
+| `FLASK_DEBUG` | `False` |
+| `ALLOWED_ORIGINS` | （Step 2でVercelのURLが決まったら設定） |
 
-推奨デプロイ先:
-- Railway
-- Render
-- Google Cloud Run
+5. **Create Web Service** をクリック → デプロイ開始
+6. デプロイ完了後、RenderのURLをメモ（例: `https://kitchen-app-backend-xxxx.onrender.com`）
+7. ヘルスチェックで動作確認: `https://<render-url>/api/health`
+
+### Step 2: フロントエンドを Vercel にデプロイ
+
+1. [Vercel](https://vercel.com/) にログイン（GitHubアカウント連携推奨）
+2. **Add New → Project** を選択
+3. GitHubリポジトリをインポート
+4. 以下を設定:
+
+| 設定項目 | 値 |
+|----------|-----|
+| Framework Preset | `Vite` |
+| Root Directory | `frontend` |
+| Build Command | `npm run build` |
+| Output Directory | `dist` |
+
+5. **Environment Variables** に以下を追加:
+
+| 変数名 | 値 |
+|--------|-----|
+| `VITE_API_URL` | `https://<render-url>/api`（Step 1のRender URL） |
+
+6. **Deploy** をクリック → デプロイ開始
+7. デプロイ完了後、VercelのURL（例: `https://kitchen-app-xxxx.vercel.app`）をメモ
+
+### Step 3: CORSの設定
+
+1. Render のダッシュボードに戻る
+2. **Environment** タブで `ALLOWED_ORIGINS` を追加:
+   - 値: `https://kitchen-app-xxxx.vercel.app`（Step 2のVercel URL）
+3. Renderが自動で再デプロイされるのを待つ
+
+### デプロイ後の確認
+
+- フロントエンド: `https://<vercel-url>` にアクセス
+- バックエンド: `https://<render-url>/api/health` で `{"status": "healthy"}` を確認
+- 商品一覧が表示されること、注文が作成できることを確認
+
+> ⚠️ **注意**: Renderの無料プランはアクティビティがない場合15分後にスリープします。初回アクセス時に30秒〜1分程度の起動時間がかかります。
 
 ## 認証機能（Supabase Auth）
 
